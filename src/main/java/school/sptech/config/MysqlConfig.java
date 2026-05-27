@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class MysqlConfig {
-    private static final String URL = System.getenv().getOrDefault("DB_URL", "jdbc:mysql://mysql-hyper:3306/ConstrucaoBancoDeDados");
+    private static final String URL = System.getenv().getOrDefault("DB_URL", "jdbc:mysql://mysql:3306/ConstrucaoBancoDeDados");
     private static final String user = System.getenv().getOrDefault("DB_USER", "hyper");
     private static final String senha = System.getenv().getOrDefault("DB_PASSWORD", "1234");
 
