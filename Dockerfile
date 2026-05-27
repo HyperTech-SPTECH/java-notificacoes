@@ -1,11 +1,11 @@
-# ETAPA 1: Compilação e Build com Maven e Java Corretto 21
+# ETAPA 1: Compilação e Build
 FROM maven:3.9.6-amazoncorretto-21 AS build
 WORKDIR /app
 
 COPY pom.xml .
 COPY src ./src
 
-# Executa o build limpo (Seu comando original que funciona)
+# Executa o build limpo gerando o JAR e separando as dependências
 RUN mvn clean package -DskipTests
 
 # ETAPA 2: Imagem de Execução Leve
@@ -18,11 +18,12 @@ RUN apk add --no-cache tzdata && \
 
 WORKDIR /app
 
-# 1. Copia o seu JAR principal
-COPY --from=build /app/target/app-jar-with-dependencies.jar app.jar
+# Copia o JAR principal do seu código
+COPY --from=build /app/target/app.jar .
 
-# 2. Copia todas as dependências que o Maven baixou e separou no target (onde ficam os drivers)
-COPY --from=build /app/target/ /app/target/
+# Copia a pasta com TODOS os drivers e bibliotecas externas de e-mail
+COPY --from=build /app/target/dependency ./dependency
 
-# ALTERAÇÃO AQUI: Executa mapeando explicitamente a pasta target no Classpath
-ENTRYPOINT ["java", "-cp", "app.jar:/app/target/*", "school.sptech.Main"]
+# Executa apontando o seu app e os drivers externos no Classpath
+# ⚠️ IMPORTANTE: Certifique-se de que school.sptech.Main é a sua classe com o método main()
+ENTRYPOINT ["java", "-cp", "app.jar:dependency/*", "school.sptech.Main"]
