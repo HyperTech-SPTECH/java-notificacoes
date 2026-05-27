@@ -25,9 +25,15 @@ public class EmailService {
             case ANUAL -> "TemplateAnual.html";
         };
 
-        try {
-            Path caminho = Paths.get("src", "main", "java", "school", "sptech", "templates", nomeArquivo);
-            String conteudoHtml = Files.readString(caminho);
+        String caminhoTemplate = "templates/" + nomeArquivo;
+
+        try (java.io.InputStream is = getClass().getClassLoader().getResourceAsStream(caminhoTemplate)) {
+
+            if (is == null) {
+                throw new IOException("Arquivo de template não encontrado no classpath: " + caminhoTemplate);
+            }
+
+            String conteudoHtml = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
 
             conteudoHtml = conteudoHtml.replace("{nome}", nomeUsuario);
 
@@ -42,19 +48,18 @@ public class EmailService {
                 conteudoHtml = conteudoHtml.replace("{locais_perigosos}", htmlLocais);
                 conteudoHtml = conteudoHtml.replace("{cargas_visadas}", htmlCargas);
 
-
                 if(tipo == TipoNotificacao.SEMANAL){
                     double mediaDiaria = incidenteRepository.buscarMediaDiariaSemanal();
                     String htmlMedia = String.format("<li>Média de incidentes: %.2f ocorrências por dia nesta semana", mediaDiaria);
                     conteudoHtml = conteudoHtml.replace("{locais_seguros}", htmlMedia);
-                }else {
+                } else {
                     conteudoHtml = conteudoHtml.replace("{locais_seguros}",
                             "<li>Nenhuma anomalia de alta criticidade identificada nas rotas monitoradas hoje.</li>");
                 }
             }
             return conteudoHtml;
         } catch (IOException e) {
-            System.err.println("Erro ao ler o template " + nomeArquivo + ": " + e.getMessage());
+            System.err.println("Erro ao ler o template " + nomeArquivo + " do classpath: " + e.getMessage());
             return "<h1>Olá, " + nomeUsuario + "!</h1><p>Você tem uma nova notificação.</p>"; // Fallback básico
         }
     }
