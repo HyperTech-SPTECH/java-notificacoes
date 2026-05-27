@@ -6,6 +6,7 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline
 
+# Copia o código-fonte e recursos (incluindo seus templates)
 COPY src ./src
 RUN mvn clean package -DskipTests
 
@@ -20,7 +21,6 @@ RUN apk add --no-cache tzdata && \
 
 WORKDIR /app
 
-# Copia APENAS o JAR gerado na etapa de build (os templates já estão embutidos nele!)
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/*-jar-with-dependencies.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
