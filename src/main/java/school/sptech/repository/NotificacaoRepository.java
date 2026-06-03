@@ -18,7 +18,7 @@ public class NotificacaoRepository {
 
         String sql = "SELECT u.nome, ue.email, p.tipo " +
                 "FROM usuario_email_notificacao ue " +
-                "INNER JOIN usuarios u ON ue.usuario_id = u.id " +
+                "INNER JOIN usuario u ON ue.usuario_id = u.usuario_id " +
                 "INNER JOIN preferencias_notificacao p ON ue.id = p.usuario_email_id " +
                 "WHERE p.ativo = true";
 
