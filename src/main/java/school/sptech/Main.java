@@ -17,7 +17,6 @@ public class Main {
         LocalDate hoje = LocalDate.now();
         System.out.println("[Info] Data de processamento: " + hoje);
 
-        // Define as regras de calendário
         boolean ehDiaDeSemanal = (hoje.getDayOfWeek() == DayOfWeek.MONDAY);
         boolean ehDiaDeAnual = (hoje.getMonthValue() == 1 && hoje.getDayOfMonth() == 1);
 
@@ -25,10 +24,8 @@ public class Main {
             NotificacaoRepository repository = new NotificacaoRepository();
             EmailService emailService = new EmailService();
 
-            // 1. Busca todos os e-mails e preferências ativas do MySQL
             List<NotificacaoUsuarioDto> usuarios = repository.buscarNotificacoesAtivas();
 
-            // 2. Orquestração dos Disparos com validação de Calendário
             for (NotificacaoUsuarioDto usuario : usuarios) {
                 for (EmailConfigDto configEmail : usuario.getEmails()) {
                     for (String tipoString : configEmail.getTiposAtivos()) {
@@ -55,7 +52,17 @@ public class Main {
         } catch (Exception e) {
             System.err.println("[Erro Crítico] Interrupção no fluxo principal: " + e.getMessage());
             e.printStackTrace();
-            System.exit(1); // Retorna código de erro para o Docker/EC2 saber que falhou
+            System.exit(1);
+        }
+
+        try {
+            System.out.println("=== [HyperTech] Iniciando processamento do Fale Conosco ===");
+            EmailService emailService = new EmailService();
+            emailService.processarContatos();
+            System.out.println("=== [HyperTech] Processamento do Fale Conosco finalizado ===");
+        } catch (Exception e) {
+            System.err.println("[Erro Crítico] Falha no processamento do Fale Conosco: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 }

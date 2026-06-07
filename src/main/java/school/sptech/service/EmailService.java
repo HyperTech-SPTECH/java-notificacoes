@@ -6,17 +6,19 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import school.sptech.config.EmailConfig;
 import school.sptech.enums.TipoNotificacao;
+import school.sptech.repository.FaleConoscoRepository;
 import school.sptech.repository.IncidenteRepository;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EmailService {
 
     private final IncidenteRepository incidenteRepository = new IncidenteRepository();
+    private final FaleConoscoRepository faleConoscoRepository = new FaleConoscoRepository();
 
     private String carregarTemplateHtml(TipoNotificacao tipo, String nomeUsuario) {
         String nomeArquivo = switch (tipo) {
@@ -114,5 +116,63 @@ public class EmailService {
             }
         }
         return new String(caracteres);
+    }
+
+    public void processarContatos() {
+        try {
+            Map<Integer, String> pendentes = faleConoscoRepository.buscarEmailsNaoProcessados();
+            if (pendentes.isEmpty()) return;
+
+            String template = carregarTemplateFaleConosco();
+
+            StringBuilder listaHtml = new StringBuilder();
+            for (String email : pendentes.values()) {
+                String emailLimpo = email != null ? email.trim() : "";
+                if (!emailLimpo.isEmpty()) {
+                    listaHtml.append("<li style='margin-bottom: 5px;'>").append(emailLimpo).append("</li>");
+                }
+            }
+
+            String corpoHtml = template.replace("{lista_emails}", listaHtml.toString());
+
+            String meuEmail = "lcp600759@gmail.com";
+            enviarEmailParaEquipe(meuEmail.trim(), corpoHtml);
+
+            faleConoscoRepository.marcarComoProcessado(new ArrayList<>(pendentes.keySet()));
+
+        } catch (Exception e) {
+            System.err.println("Erro crítico no fluxo de contatos: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String carregarTemplateFaleConosco() {
+        String caminhoTemplate = "templates/TemplateFaleConosco.html";
+
+        try (java.io.InputStream is = getClass().getClassLoader().getResourceAsStream(caminhoTemplate)) {
+
+            if (is == null) {
+                throw new IOException("Arquivo de template não encontrado no classpath: " + caminhoTemplate);
+            }
+
+            return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
+        } catch (IOException e) {
+            System.err.println("Erro ao ler o template " + caminhoTemplate + ": " + e.getMessage());
+            return "<html><body><h1>Novos Contatos</h1><ul>{lista_emails}</ul></body></html>";
+        }
+    }
+
+    private void enviarEmailParaEquipe(String destinatario, String conteudoHtml) throws Exception {
+        MimeMessage message = new MimeMessage(EmailConfig.getSession());
+
+        message.setFrom(new InternetAddress("hypertechofiicial@gmail.com", "Sistema HyperTech"));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario.trim()));
+        String emailCopia = "hypertechofiicial@gmail.com";
+        message.addRecipient(Message.RecipientType.CC, new InternetAddress(emailCopia.trim()));
+        message.setSubject("Relatório Diário - Fale Conosco");
+        message.setContent(conteudoHtml, "text/html; charset=utf-8");
+
+        Transport.send(message);
     }
 }
