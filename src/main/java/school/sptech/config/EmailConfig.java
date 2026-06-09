@@ -33,7 +33,7 @@ public class EmailConfig {
                 protected PasswordAuthentication getPasswordAuthentication(){
                     return new PasswordAuthentication(
                             user != null ? user : "hypertechofiicial@gmail.com",
-                            senha != null ? senha : "fcti rphn cihf oxgg"
+                            senha != null ? senha : "tjvh btmc uaaf begw"
                     );
                 }
             });
